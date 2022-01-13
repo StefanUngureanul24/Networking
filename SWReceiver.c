@@ -10,34 +10,17 @@
 #include <fcntl.h>
 #include "SWReceiver.h"
 
-//typedef enum {ACK=16,SYN=1,FIN=2,RST=4} TYPE;
-
-/*
-typedef struct packet{
-    char id;
-    char type; //struct type
-    short seqNum; //
-    short acq;
-    char ecn;
-    char fenetre;
-    char data[44];
-}Packet;
-*/
-
-int main(int argc, char **argv){
-    
-    
-
+int main(int argc, char **argv) {
     int port_medium = atoi("5555");
     int port_local = atoi("6666");
     char buffer[1024];
     int sockfd;
 
-    if((sockfd=socket(AF_INET, SOCK_DGRAM, 0))<0){
-
+    if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0))<0) {
         perror("[ERROR] Socket is not created.\n");
         return(errno);
-    }else{
+    }
+    else {
         printf("[SUCCESS] Socket created.\n");
     }
 
@@ -96,9 +79,8 @@ int main(int argc, char **argv){
             }
         }
 
-    //
     int dataFinish=1;
-    while(dataFinish){
+    while (dataFinish) {
         int addr_size = sizeof(mediumAddr);
         int f_recv_size= recvfrom(sockfd,&packet_recv, sizeof(Packet), 0,(struct sockaddr *)&mediumAddr,&addr_size);
         if (f_recv_size > 0) {
@@ -125,22 +107,18 @@ int main(int argc, char **argv){
                     dataFinish = 0;
                 }    
             }
-        }else {
+        } 
+        else {
             printf("[-] ACK not recieved\n");
             ack_recv = 0;
         }
         idFlux++;
-        if(ack_recv=1){
-            
+        if (ack_recv=1) {
             packet_send.seqNum=packet_recv.seqNum;
             packet_send.type=packet_recv.type;
             packet_send.ecn=packet_recv.ecn;
             packet_send.acq=(packet_recv.seqNum+1)%2;
             packet_send.id=packet_recv.id;
-            
-            
-
-            
             sendto(sockfd,&packet_send,sizeof(Packet), 0, (struct sockaddr *)&serverAddr,sizeof(serverAddr));
             printf("[+]Packet Sent\n");
             printf("[+] Sending Packet %d\nSeqNum:%d\nACK Num:%d\n",packet_send.id,packet_send.seqNum,packet_send.acq);

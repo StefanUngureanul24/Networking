@@ -9,22 +9,18 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-
-
-
-int SWSender(char *ip, char* portlocal, char* portmedium){
-    
+int SWSender(char *ip, char* portlocal, char* portmedium) {    
     struct timeval tv;
     int port_local = atoi(portlocal);
     int port_dest = atoi(portmedium);
     char buffer[1024];
     int sockfd;
 
-    if((sockfd=socket(AF_INET, SOCK_DGRAM, 0))<0){
-
+    if ((sockfd=socket(AF_INET, SOCK_DGRAM, 0))<0) {
         perror("[ERROR] Socket is not created.\n");
         return(errno);
-    }else{
+    }
+    else {
         printf("[SUCCESS] Socket created.\n");
     }
 
@@ -32,7 +28,6 @@ int SWSender(char *ip, char* portlocal, char* portmedium){
     Packet packet_send;
     Packet packet_recv;
     int ack_recv=1;
-
     
     struct sockaddr_in originAddr, destAddr;
     socklen_t addr_size;
@@ -45,13 +40,12 @@ int SWSender(char *ip, char* portlocal, char* portmedium){
     destAddr.sin_port=htons(port_dest);
     destAddr.sin_addr.s_addr= inet_addr(ip);
 
-    
-
     bind(sockfd,(const struct sockaddr*)&originAddr,sizeof(struct sockaddr_in));
 /*
 0- ACK
 1- SEQ
 */
+  
     //Connection establishing
     packet_send.id=1;
     packet_send.type=1;
@@ -79,8 +73,6 @@ int SWSender(char *ip, char* portlocal, char* portmedium){
     }else{
         printf("[-] SYN-ACKPacket not recieved\n");
     }
-
-    //
     
     tv.tv_sec = 2;
     tv.tv_usec = 0;

@@ -10,7 +10,7 @@
 
 int main(int argc,char ** argv){
 
-	if(argc!=5){
+	if (argc != 5) {
 		printf("./source <mode> <IP_distante> <port_local> <port_ecoute_src_pertubateur>\n");
 		exit(EXIT_FAILURE);
 	}
@@ -20,7 +20,7 @@ int main(int argc,char ** argv){
 	char *port_local=argv[3];
 	char *port_medium=argv[4];
 	
-	if(mode==1)
+	if (mode==1)
 		GoBackNSender(ip,port_local,port_medium);
 	else
 		SWSender(ip,port_local,port_medium);

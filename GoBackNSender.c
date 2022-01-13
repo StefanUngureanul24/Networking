@@ -7,21 +7,18 @@
 #include <errno.h>   
 #include "struct.h"   
 
-
-    
-int GoBackNSender(char *ip, char* portlocal, char*portmedium) 
-{
-    
-    int chunkSize = 3; //size of each packet data
-    int windowSize = 10; //number of windows
+int GoBackNSender(char *ip, char* portlocal, char*portmedium) {
+    int chunkSize = 3; // size of each packet data
+    int windowSize = 10; // number of windows
+    /* Random values for test purpose */
     char buffer1[1024] = "oh god i love reseaux so much!";
     char buffer2[1024] = "whatever comes to my mind make";
     char buffer3[1024] = "lorem ipsum kods qsd sljjsq jk";
 
     char **buffer=malloc(DATACOUNT*sizeof(char*));
-    buffer[0]=buffer1;
-    buffer[1]=buffer2;
-    buffer[2]=buffer3;
+    buffer[0] = buffer1;
+    buffer[1] = buffer2;
+    buffer[2] = buffer3;
 
     int port_local = atoi(portlocal);
     int port_dest = atoi(portmedium);
@@ -29,27 +26,25 @@ int GoBackNSender(char *ip, char* portlocal, char*portmedium)
     int sockfd;
 
     if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
-        perror("[-] Socket pas créé.\n");
+        perror("[-] Socket not created.\n");
         return(errno);
     }
     else {
-        printf("[+] Socket créé.\n");
+        printf("[+] Socket created.\n");
     }
 
-    //int ack_recv = 1;
-    
     struct sockaddr_in originAddr, destAddr;
     socklen_t addr_size;
 
     memset(&destAddr, 0, sizeof(destAddr));
     
     originAddr.sin_family = AF_INET;
-    originAddr.sin_port=htons(port_local);
-    originAddr.sin_addr.s_addr= inet_addr(ip);
+    originAddr.sin_port = htons(port_local);
+    originAddr.sin_addr.s_addr = inet_addr(ip);
     
-    destAddr.sin_family=AF_INET;
-    destAddr.sin_port=htons(port_dest);
-    destAddr.sin_addr.s_addr= inet_addr(ip);
+    destAddr.sin_family = AF_INET;
+    destAddr.sin_port = htons(port_dest);
+    destAddr.sin_addr.s_addr = inet_addr(ip);
 
     bind(sockfd,(const struct sockaddr*)&originAddr,sizeof(struct sockaddr_in));
     
@@ -61,10 +56,10 @@ int GoBackNSender(char *ip, char* portlocal, char*portmedium)
     int destAddrLen = sizeof(destAddr);
     Packet packet_send;
     Packet packet_recv;
-    int indexBuffer=0;
-    int connectionEstablished=0;
+    int indexBuffer = 0;
+    int connectionEstablished = 0;
 
-    //Connection establishing
+    // Connection establishing
     packet_send.id=1;
     packet_send.type=1;
     packet_send.seqNum=521;
@@ -75,7 +70,7 @@ int GoBackNSender(char *ip, char* portlocal, char*portmedium)
     
     addr_size = sizeof(originAddr);
     int f_recv_size= recvfrom(sockfd,&packet_recv, sizeof(Packet), 0,(struct sockaddr *)&originAddr,&addr_size);
-    if(f_recv_size >0 && packet_recv.type==17 && packet_recv.acq==packet_send.seqNum+1 ){
+    if(f_recv_size >0 && packet_recv.type==17 && packet_recv.acq==packet_send.seqNum+1 ) {
         printf("[+] SYN-ACK Packet Received.\n");
         int ack_recieved=packet_recv.acq;
         packet_send.id++;
@@ -85,7 +80,8 @@ int GoBackNSender(char *ip, char* portlocal, char*portmedium)
         printf("[+] ACK Packet Sent\n");
         sendto(sockfd,&packet_send,sizeof(Packet), 0, (struct sockaddr *)&destAddr,sizeof(destAddr));
         printf("[+] Connection Established.\n");
-    } else {
+    } 
+    else {
         printf("[-] SYN-ACKPacket not recieved\n");
     }
 
@@ -137,7 +133,7 @@ int GoBackNSender(char *ip, char* portlocal, char*portmedium)
         indexBuffer++;
     } 
 
-    //3WayHandshake Closing Connection
+    // 3WayHandshake Closing Connection
       
     Packet packet_fin;
     packet_fin.type=2;
@@ -148,26 +144,26 @@ int GoBackNSender(char *ip, char* portlocal, char*portmedium)
     int closeFinACKLen;
     while(closeConnection==0){
         if (sendto(sockfd,&packet_fin,sizeof(Packet), 0, (struct sockaddr *)&destAddr,sizeof(destAddr)) != sizeof(packet_send))
-            printf("Erreur de l'envoi\n");
+            printf("Sending error\n");
         int packetFinSeq=packet_fin.seqNum;
         printf("PacketFinSeqNum: %d\n",packetFinSeq);
-        while(1){
+        while(1) {
             printf("Waiting for FIN-ACK\n");
-            if(closeFinACKLen = recvfrom(sockfd, &packet_fin, sizeof(Packet), 0,
+            if (closeFinACKLen = recvfrom(sockfd, &packet_fin, sizeof(Packet), 0,
                         (struct sockaddr *) &originAddr, &originAddrLen) == -1)
                         printf("[-] Error");
-            printf("Packet fin: acq=%d seqnum=%d\n",packet_fin.acq,packet_fin.seqNum);
-            if(packet_fin.acq=packetFinSeq+1 && packet_fin.type==18){
-                packet_fin.acq=packet_fin.seqNum+1;
+            printf("Last packet: acq=%d seqnum=%d\n",packet_fin.acq,packet_fin.seqNum);
+            if(packet_fin.acq = packetFinSeq+1 && packet_fin.type == 18) {
+                packet_fin.acq = packet_fin.seqNum+1;
                 if (sendto(sockfd,&packet_fin,sizeof(Packet), 0, (struct sockaddr *)&destAddr,sizeof(destAddr)) != sizeof(packet_send))
-                    printf("Erreur de l'envoi\n");
-                    closeConnection=1;
+                    printf("Sending error\n");
+                    closeConnection = 1;
                     printf("Disconnecting...\n");
                     sleep(2);
                     break;
             }
         }
-    probACK=0;
+    probACK = 0;
     }
     close(sockfd);
 

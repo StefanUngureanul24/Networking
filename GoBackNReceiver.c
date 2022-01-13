@@ -10,7 +10,12 @@
 
 int main(int argc, char *argv[])
 {
-    if(argc!=4){
+	/*
+		Verifying if the file is run
+		with the correct number of
+		arguments
+	*/
+    if (argc != 4) {
 		printf("./source <IP_distante> <port_local> <port_ecoute_src_pertubateur>\n");
 		exit(EXIT_FAILURE);
 	}
@@ -24,7 +29,9 @@ int main(int argc, char *argv[])
     int port_local = atoi(argv[2]);
     char buffer[1024];
     
-    /* Créer socket pour communication UDP */
+    /* 
+    	Creation of UDP socket
+    */
     if ((sockfd = socket(PF_INET, SOCK_DGRAM, 0)) < 0) {
         perror("[ERROR] Socket is not created.\n");
     }    
@@ -46,10 +53,12 @@ int main(int argc, char *argv[])
     if (bind(sockfd, (struct sockaddr *) &serverAddr, sizeof(serverAddr)) < 0)
         printf("Error\n");
 
-    
-    /* Initialisation des variable avec leur valeurs de début */
+	/* 
+		Initialising the base variables 
+		that will be used
+	*/
     int base = -2;
-    int dataFinish=0;
+    int dataFinish = 0;
     memset(buffer, 0, sizeof(buffer));
     int mediumAddrLen = sizeof(mediumAddr);
     int serverAddrLen = sizeof(serverAddr);
@@ -57,20 +66,20 @@ int main(int argc, char *argv[])
     Packet packet_recv;
     Packet packet_send;
 
-    /* Établir la connexion */
-
+	/* Establishment of connection */
     addr_size = sizeof(serverAddr);
-    int f_recv_size= recvfrom(sockfd,&packet_recv, sizeof(Packet), 0,(struct sockaddr *)&serverAddr,&addr_size);
-    if(f_recv_size >0 && packet_recv.type==1 ){
+    int f_recv_size = recvfrom(sockfd, &packet_recv, sizeof(Packet), 0,(struct sockaddr *)&serverAddr, &addr_size);
+    if (f_recv_size > 0 && packet_recv.type == 1) {
         printf("[+] SYN Packet Recieved\n");
-        
-
-    }else{
+    }
+    
+    else {
         printf("[-] SYN Packet not recieved\n");
         
     }
-    int ack_recv=1;
-    if(ack_recv=1){
+    
+    int ack_recv = 1;
+    if (ack_recv == 1) {
         
         packet_send.id=2;
         packet_send.type=17;
@@ -80,15 +89,16 @@ int main(int argc, char *argv[])
         sendto(sockfd,&packet_send,sizeof(Packet), 0, (struct sockaddr *)&mediumAddr,sizeof(mediumAddr));
         printf("[+] SYN-ACK Packet Sent.\n");
 
-        int f_recv_size= recvfrom(sockfd,&packet_recv, sizeof(Packet), 0,(struct sockaddr *)&serverAddr,&addr_size);
-        if(f_recv_size >0 && packet_recv.type==16 && packet_recv.acq==packet_send.seqNum+1){
+        int f_recv_size= recvfrom(sockfd, &packet_recv, sizeof(Packet), 0, (struct sockaddr *)&serverAddr, &addr_size);
+        if (f_recv_size > 0 && packet_recv.type == 16 && packet_recv.acq == packet_send.seqNum + 1) {
             printf("[+] ACK Packet Recieved\n");
-            ack_recv=1;
+            ack_recv = 1;
             printf("Connection Established\n");
-            }else{
-                printf("[-] ACK Packet not recieved\n");
-                ack_recv=0;
             }
+        else {
+                printf("[-] ACK Packet not recieved\n");
+                ack_recv = 0;
+		}
     }
 
 
@@ -103,55 +113,61 @@ int main(int argc, char *argv[])
 
             seqNumber = packet_recv.seqNum;
             
-            /* Si le numéro de sequence est 0
-                alors on construit une nouveau collection 
-                de données
-             */
-            if (packet_recv.seqNum == 0 && packet_recv.type == 16)
-            {
+            /* 
+            	If sequence number is 0
+            	then a new collection of data
+            	is built
+            */
+            if (packet_recv.seqNum == 0 && packet_recv.type == 16) {
                 printf("Recieved Initial Packet from %s\n", inet_ntoa(mediumAddr.sin_addr));
                 printf("Sequence Number #%d - \n %s : \n", packet_recv.seqNum, packet_recv.data);
                 strcat(buffer, packet_recv.data);                
                 base = packet_recv.id % 10;                
                 short ack = packet_recv.acq;
                 
-            } else if (packet_recv.seqNum == base + 1 && packet_recv.type == 16) /* if base+1 then its a subsequent in order packet */
-            {
-                /* après on concatène les données à envoyer
-                    avec le contenu du buffer reçu
-                 */
+            } 
+            
+            /* if base+1 then it's a subsequent in order packet */
+            else if (packet_recv.seqNum == base + 1 && packet_recv.type == 16) {
+                /* 
+                	Then data will be concatenated
+                	to buffer's content
+                */
                 printf("Sequence Number #%d - \n %s : \n", packet_recv.seqNum, packet_recv.data);
                 strcat(buffer, packet_recv.data);                
                 base = packet_recv.seqNum;
                 short ack = packet_recv.acq;
-            } else if (packet_recv.type == 1 && packet_recv.seqNum != base + 1)
-            {
+            } 
+            else if (packet_recv.type == 1 && packet_recv.seqNum != base + 1) {
                 /* if recieved out of sync packet, send ACK with old base */
-                /* si le paquet reçu n'est pas dans le paquet sync 
-                    alors on envoie l'acquittement avec l'ancienne base
-                */
                 printf("Recieved Out of Sync Packet #%d\n", packet_recv.seqNum);
-                /* on envoie l'acquittement avec l'ancienne base */
+                /* we send the ack with the old base */
                 short ack = packet_recv.acq;
             }
             
             packet_send = packet_recv;
             
-            /* Renvoie de l'acquittement pour le paquet reçu */
+            /* 
+            	Sending the ACK for a packet received
+            */
             if (packet_recv.type==16 && base >= 0 && base < packet_send.fenetre){
                 printf("-Sending ACKK #%d\n", packet_send.id);
                 if (sendto(sockfd, &packet_send, sizeof(packet_send), 0,
                      (struct sockaddr *) &mediumAddr, sizeof(mediumAddr)) != sizeof(packet_send))
                     printf("Error\n");
-            } else if (base == -1 ) {
+            } 
+            else if (base == -1 ) {
                 printf("Recieved Teardown Packet\n");
                 printf("Sending Terminal ACK\n");
                 if (sendto(sockfd, &packet_send, sizeof(Packet), 0,
                      (struct sockaddr *) &mediumAddr, sizeof(mediumAddr)) != sizeof(Packet))
                     printf("Error\n");
             }
-
-            /* Si c'est le dernier paquet, on affiche le message */
+          
+            /* 
+            	If the packet is the last one
+            	then a message will be displayed
+            */
             if (((packet_recv.id)%10) == 9 && packet_recv.type != 2) {
                     printf("\nMESSAGE RECIEVED\n%s\n\n", buffer);
                     memset(buffer, 0, sizeof(buffer));
