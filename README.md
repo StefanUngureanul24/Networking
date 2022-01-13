@@ -1,2 +1,2 @@
 # Networking
-Implementation of data transmission protocolos Stop and Wait and Go-Back-N.
+Implementation of the data transmission protocols Stop and Wait and Go-Back-N 
